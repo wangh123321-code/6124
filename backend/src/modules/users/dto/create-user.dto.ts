@@ -1,0 +1,36 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, MinLength, IsOptional, IsEnum, IsBoolean } from 'class-validator';
+import { UserRole } from '../../../entities/user.entity';
+
+export class CreateUserDto {
+  @ApiProperty({ description: '用户名', example: 'user001' })
+  @IsString()
+  @IsNotEmpty()
+  username: string;
+
+  @ApiProperty({ description: '密码', example: '123456', minLength: 6 })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(6)
+  password: string;
+
+  @ApiProperty({ description: '姓名', example: '张三' })
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @ApiProperty({ description: '手机号', example: '13800138000', required: false })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @ApiProperty({ description: '角色', enum: UserRole, example: UserRole.CUSTOMER, required: false })
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
+
+  @ApiProperty({ description: '是否启用', example: true, required: false })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}

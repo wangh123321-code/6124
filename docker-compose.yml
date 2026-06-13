@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: swim-pg
+    environment:
+      POSTGRES_USER: swim
+      POSTGRES_PASSWORD: swim123456
+      POSTGRES_DB: swim_management
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - swim-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U swim -d swim_management"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: swim-backend
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: swim
+      DB_PASSWORD: swim123456
+      DB_NAME: swim_management
+      JWT_SECRET: swim-management-secret-key
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - swim-network
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  frontend:
+    build: ./frontend
+    container_name: swim-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - swim-network
+
+volumes:
+  pgdata:
+
+networks:
+  swim-network:
+    driver: bridge
