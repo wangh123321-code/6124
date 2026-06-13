@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -10,6 +10,8 @@ import { StatisticsModule } from './modules/statistics/statistics.module';
 import { LogModule } from './modules/log/log.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { SeedModule } from './modules/seed/seed.module';
+import { JwtMiddleware } from './common/middleware/jwt.middleware';
+import { User } from './entities/user.entity';
 
 @Module({
   imports: [
@@ -29,6 +31,7 @@ import { SeedModule } from './modules/seed/seed.module';
       secret: process.env.JWT_SECRET || 'swim-management-secret-key',
       signOptions: { expiresIn: '24h' },
     }),
+    TypeOrmModule.forFeature([User]),
     AuthModule,
     TicketModule,
     LockerModule,
@@ -39,4 +42,10 @@ import { SeedModule } from './modules/seed/seed.module';
     SeedModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(JwtMiddleware)
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+}
