@@ -2,7 +2,8 @@ import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User, UserRole } from '../../entities/user.entity';
+import * as dayjs from 'dayjs';
+import { User, UserRole, MemberLevel } from '../../entities/user.entity';
 
 @Injectable()
 export class SeedService implements OnModuleInit {
@@ -32,6 +33,8 @@ export class SeedService implements OnModuleInit {
         name: '系统管理员',
         phone: '13800000001',
         role: UserRole.ADMIN,
+        memberLevel: MemberLevel.DIAMOND,
+        memberExpireAt: dayjs().add(365, 'day').toDate(),
       },
       {
         username: 'manager',
@@ -39,6 +42,8 @@ export class SeedService implements OnModuleInit {
         name: '主管张经理',
         phone: '13800000002',
         role: UserRole.MANAGER,
+        memberLevel: MemberLevel.GOLD,
+        memberExpireAt: dayjs().add(180, 'day').toDate(),
       },
       {
         username: 'finance',
@@ -46,6 +51,8 @@ export class SeedService implements OnModuleInit {
         name: '财务李会计',
         phone: '13800000003',
         role: UserRole.FINANCE,
+        memberLevel: MemberLevel.NORMAL,
+        memberExpireAt: null,
       },
       {
         username: 'frontdesk',
@@ -53,13 +60,53 @@ export class SeedService implements OnModuleInit {
         name: '前台小王',
         phone: '13800000004',
         role: UserRole.FRONT_DESK,
+        memberLevel: MemberLevel.NORMAL,
+        memberExpireAt: null,
       },
       {
         username: 'customer1',
         password: 'customer123',
-        name: '测试用户',
+        name: '普通会员-张三',
         phone: '13900000001',
         role: UserRole.CUSTOMER,
+        memberLevel: MemberLevel.NORMAL,
+        memberExpireAt: null,
+      },
+      {
+        username: 'silver_vip',
+        password: 'vip123456',
+        name: '银卡会员-李四',
+        phone: '13900000002',
+        role: UserRole.CUSTOMER,
+        memberLevel: MemberLevel.SILVER,
+        memberExpireAt: dayjs().add(30, 'day').toDate(),
+      },
+      {
+        username: 'gold_vip',
+        password: 'vip123456',
+        name: '金卡会员-王五',
+        phone: '13900000003',
+        role: UserRole.CUSTOMER,
+        memberLevel: MemberLevel.GOLD,
+        memberExpireAt: dayjs().add(90, 'day').toDate(),
+      },
+      {
+        username: 'diamond_vip',
+        password: 'vip123456',
+        name: '钻石会员-赵六',
+        phone: '13900000004',
+        role: UserRole.CUSTOMER,
+        memberLevel: MemberLevel.DIAMOND,
+        memberExpireAt: dayjs().add(365, 'day').toDate(),
+      },
+      {
+        username: 'expired_vip',
+        password: 'vip123456',
+        name: '过期会员-孙七',
+        phone: '13900000005',
+        role: UserRole.CUSTOMER,
+        memberLevel: MemberLevel.SILVER,
+        memberExpireAt: dayjs().subtract(1, 'day').toDate(),
       },
     ];
 
@@ -73,10 +120,14 @@ export class SeedService implements OnModuleInit {
     }
 
     this.logger.log('用户数据初始化完成');
-    this.logger.log('默认账号: admin / admin123 (管理员)');
-    this.logger.log('默认账号: manager / manager123 (主管)');
-    this.logger.log('默认账号: finance / finance123 (财务)');
-    this.logger.log('默认账号: frontdesk / front123 (前台)');
-    this.logger.log('默认账号: customer1 / customer123 (游客)');
+    this.logger.log('默认账号: admin / admin123 (管理员, 钻石会员)');
+    this.logger.log('默认账号: manager / manager123 (主管, 金卡会员)');
+    this.logger.log('默认账号: finance / finance123 (财务, 普通会员)');
+    this.logger.log('默认账号: frontdesk / front123 (前台, 普通会员)');
+    this.logger.log('默认账号: customer1 / customer123 (普通用户)');
+    this.logger.log('默认账号: silver_vip / vip123456 (银卡会员)');
+    this.logger.log('默认账号: gold_vip / vip123456 (金卡会员)');
+    this.logger.log('默认账号: diamond_vip / vip123456 (钻石会员)');
+    this.logger.log('默认账号: expired_vip / vip123456 (过期会员)');
   }
 }

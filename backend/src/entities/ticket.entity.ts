@@ -7,7 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { User } from './user.entity';
+import { User, MemberLevel } from './user.entity';
 
 export enum TicketType {
   SINGLE = 'single',
@@ -21,6 +21,14 @@ export enum TicketStatus {
   EXPIRED = 'expired',
   REFUNDING = 'refunding',
   REFUNDED = 'refunded',
+}
+
+export interface TicketBenefits {
+  memberLevel?: MemberLevel;
+  memberDays?: number;
+  freeLockerHours?: number;
+  vipLockerAccess?: boolean;
+  [key: string]: any;
 }
 
 @Entity('tickets')
@@ -58,6 +66,15 @@ export class Ticket {
     default: TicketStatus.ACTIVE,
   })
   status: TicketStatus;
+
+  @Column({ default: false })
+  isMemberExclusive: boolean;
+
+  @Column({ type: 'json', nullable: true })
+  benefits: TicketBenefits;
+
+  @Column({ type: 'json', nullable: true })
+  extendedFields: Record<string, any>;
 
   @Column({ nullable: true })
   qrCode: string;

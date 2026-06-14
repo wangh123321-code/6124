@@ -24,7 +24,7 @@ services:
     build: ./backend
     container_name: swim-backend
     ports:
-      - "3000:3000"
+      - "3010:3000"
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -45,7 +45,7 @@ services:
     build: ./frontend
     container_name: swim-frontend
     ports:
-      - "80:80"
+      - "8090:80"
     depends_on:
       - backend
     networks:

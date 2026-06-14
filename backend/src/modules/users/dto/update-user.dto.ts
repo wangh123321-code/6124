@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsOptional, MinLength, IsEnum, IsBoolean } from 'class-validator';
-import { UserRole } from '../../../entities/user.entity';
+import { UserRole, MemberLevel } from '../../../entities/user.entity';
 
 export class UpdateUserDto {
   @ApiProperty({ description: '密码', example: '123456', minLength: 6, required: false })
@@ -23,6 +23,15 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
+
+  @ApiProperty({ description: '会员等级', enum: MemberLevel, example: MemberLevel.NORMAL, required: false })
+  @IsOptional()
+  @IsEnum(MemberLevel)
+  memberLevel?: MemberLevel;
+
+  @ApiProperty({ description: '会员过期时间', required: false })
+  @IsOptional()
+  memberExpireAt?: Date;
 
   @ApiProperty({ description: '是否启用', example: true, required: false })
   @IsOptional()

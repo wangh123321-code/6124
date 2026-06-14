@@ -2,9 +2,11 @@ import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/c
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 
+import { CommonModule } from './common/common.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { TicketModule } from './modules/ticket/ticket.module';
 import { LockerModule } from './modules/locker/locker.module';
+import { AdmissionModule } from './modules/admission/admission.module';
 import { ApprovalModule } from './modules/approval/approval.module';
 import { StatisticsModule } from './modules/statistics/statistics.module';
 import { LogModule } from './modules/log/log.module';
@@ -15,6 +17,7 @@ import { User } from './entities/user.entity';
 
 @Module({
   imports: [
+    CommonModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -35,6 +38,7 @@ import { User } from './entities/user.entity';
     AuthModule,
     TicketModule,
     LockerModule,
+    AdmissionModule,
     ApprovalModule,
     StatisticsModule,
     LogModule,

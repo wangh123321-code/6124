@@ -14,6 +14,13 @@ export enum UserRole {
   CUSTOMER = 'customer',
 }
 
+export enum MemberLevel {
+  NORMAL = 'normal',
+  SILVER = 'silver',
+  GOLD = 'gold',
+  DIAMOND = 'diamond',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -37,6 +44,16 @@ export class User {
     default: UserRole.CUSTOMER,
   })
   role: UserRole;
+
+  @Column({
+    type: 'enum',
+    enum: MemberLevel,
+    default: MemberLevel.NORMAL,
+  })
+  memberLevel: MemberLevel;
+
+  @Column({ type: 'timestamp', nullable: true })
+  memberExpireAt: Date;
 
   @Column({ default: true })
   isActive: boolean;

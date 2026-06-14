@@ -7,7 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
-import { Ticket } from './ticket.entity';
+import { Ticket, TicketBenefits } from './ticket.entity';
 
 export enum OrderStatus {
   PENDING = 'pending',
@@ -39,6 +39,12 @@ export class Order {
 
   @Column({ nullable: true })
   ticketName: string;
+
+  @Column({ type: 'json', nullable: true })
+  memberBenefits: TicketBenefits;
+
+  @Column({ type: 'json', nullable: true })
+  extendedFields: Record<string, any>;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })

@@ -5,11 +5,13 @@ import * as QRCode from 'qrcode';
 import { v4 as uuidv4 } from 'uuid';
 import * as dayjs from 'dayjs';
 
-import { Ticket, TicketType, TicketStatus } from '../../entities/ticket.entity';
+import { Ticket, TicketType, TicketStatus, TicketBenefits } from '../../entities/ticket.entity';
 import { Order, OrderStatus } from '../../entities/order.entity';
 import { TicketUsageRecord } from '../../entities/ticket-usage-record.entity';
+import { User, MemberLevel } from '../../entities/user.entity';
 import { LogService } from '../../common/services/log.service';
 import { LogModule, LogAction } from '../../entities/operation-log.entity';
+import { MemberService } from '../../common/services/member.service';
 
 import { CreateOrderDto } from './dto/create-order.dto';
 import { VerifyTicketDto } from './dto/verify-ticket.dto';
@@ -28,8 +30,11 @@ export class TicketService {
     private orderRepository: Repository<Order>,
     @InjectRepository(TicketUsageRecord)
     private usageRecordRepository: Repository<TicketUsageRecord>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
     private dataSource: DataSource,
     private logService: LogService,
+    private memberService: MemberService,
   ) {}
 
   private generatePickupCode(): string {
@@ -71,6 +76,31 @@ export class TicketService {
     }
   }
 
+  private buildBenefits(createOrderDto: CreateOrderDto): TicketBenefits {
+    const { benefits, memberLevel, memberDays } = createOrderDto;
+    if (benefits) {
+      return benefits;
+    }
+    if (memberLevel) {
+      const privilege = this.memberService.getPrivilege(memberLevel);
+      return {
+        memberLevel,
+        memberDays: memberDays || 30,
+        freeLockerHours: privilege.freeLockerHours,
+        vipLockerAccess: privilege.vipLockerAccess,
+      };
+    }
+    return {};
+  }
+
+  private calculateMemberExpireAt(currentExpireAt: Date | null, memberDays: number): Date {
+    const now = dayjs();
+    if (currentExpireAt && dayjs(currentExpireAt).isAfter(now)) {
+      return dayjs(currentExpireAt).add(memberDays, 'day').toDate();
+    }
+    return now.add(memberDays, 'day').toDate();
+  }
+
   async createOrder(
     createOrderDto: CreateOrderDto,
     userId: string,
@@ -82,13 +112,23 @@ export class TicketService {
     await queryRunner.startTransaction();
 
     try {
-      const { ticketType, ticketName, totalTimes, validDays, paymentMethod } = createOrderDto;
+      const { ticketType, ticketName, totalTimes, validDays, paymentMethod, isMemberExclusive, memberLevel, memberDays } = createOrderDto;
 
       if (ticketType === TicketType.TIMES_CARD && !totalTimes) {
         throw new BadRequestException('次卡必须指定总次数');
       }
       if (ticketType === TicketType.MONTHLY_CARD && !validDays) {
         throw new BadRequestException('月卡必须指定有效天数');
+      }
+
+      const benefits = this.buildBenefits(createOrderDto);
+
+      const user = await queryRunner.manager.findOne(User, {
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!user) {
+        throw new NotFoundException('用户不存在');
       }
 
       const price = this.getTicketPrice(ticketType, createOrderDto);
@@ -109,6 +149,8 @@ export class TicketService {
         validDays: ticketType === TicketType.MONTHLY_CARD ? validDays : undefined,
         expireAt,
         status: TicketStatus.ACTIVE,
+        isMemberExclusive: isMemberExclusive || false,
+        benefits,
         pickupCode,
         userId,
       });
@@ -125,6 +167,11 @@ export class TicketService {
         status: OrderStatus.PAID,
         ticketType,
         ticketName,
+        memberBenefits: benefits,
+        extendedFields: {
+          isMemberExclusive: isMemberExclusive || false,
+          originalMemberLevel: user.memberLevel,
+        },
         userId,
         ticketId,
         sellerId,
@@ -133,14 +180,35 @@ export class TicketService {
 
       await queryRunner.manager.save(Order, order);
 
+      if (isMemberExclusive && memberLevel) {
+        const privilege = this.memberService.getPrivilege(memberLevel);
+        const days = memberDays || 30;
+        
+        user.memberLevel = this.memberService.isHigherLevel(memberLevel, user.memberLevel)
+          ? memberLevel
+          : user.memberLevel;
+        user.memberExpireAt = this.calculateMemberExpireAt(user.memberExpireAt || null, days);
+        
+        await queryRunner.manager.save(User, user);
+
+        order.extendedFields = {
+          ...order.extendedFields,
+          newMemberLevel: user.memberLevel,
+          memberExpireAt: user.memberExpireAt,
+          freeLockerHours: privilege.freeLockerHours,
+          vipLockerAccess: privilege.vipLockerAccess,
+        };
+        await queryRunner.manager.save(Order, order);
+      }
+
       await queryRunner.commitTransaction();
 
       await this.logService.record(
         LogModule.TICKET,
         LogAction.CREATE,
-        `创建订单: ${orderNo}, 票卡类型: ${ticketType}`,
+        `创建订单: ${orderNo}, 票卡类型: ${ticketType}${isMemberExclusive ? ', 会员专属' : ''}`,
         sellerId || userId,
-        { orderId: order.id, ticketId, orderNo, ticketType, amount: price },
+        { orderId: order.id, ticketId, orderNo, ticketType, amount: price, isMemberExclusive, memberLevel },
         ip,
       );
 
@@ -385,6 +453,9 @@ export class TicketService {
       validDays: ticket.validDays,
       expireAt: ticket.expireAt,
       status: ticket.status,
+      isMemberExclusive: ticket.isMemberExclusive,
+      benefits: ticket.benefits,
+      extendedFields: ticket.extendedFields,
       qrCode: ticket.qrCode,
       pickupCode: ticket.pickupCode,
       userId: ticket.userId,
@@ -401,6 +472,8 @@ export class TicketService {
       status: order.status,
       ticketType: order.ticketType,
       ticketName: order.ticketName,
+      memberBenefits: order.memberBenefits,
+      extendedFields: order.extendedFields,
       userId: order.userId,
       ticketId: order.ticketId,
       sellerId: order.sellerId,

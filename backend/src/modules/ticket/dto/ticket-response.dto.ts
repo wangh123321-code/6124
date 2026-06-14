@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TicketType, TicketStatus } from '../../../entities/ticket.entity';
+import { TicketType, TicketStatus, TicketBenefits } from '../../../entities/ticket.entity';
 
 export class TicketResponseDto {
   @ApiProperty({ description: '票卡ID' })
@@ -28,6 +28,15 @@ export class TicketResponseDto {
 
   @ApiProperty({ enum: TicketStatus, description: '票卡状态' })
   status: TicketStatus;
+
+  @ApiProperty({ description: '是否会员专属' })
+  isMemberExclusive: boolean;
+
+  @ApiProperty({ description: '会员权益配置', required: false })
+  benefits?: TicketBenefits;
+
+  @ApiProperty({ description: '扩展字段', required: false })
+  extendedFields?: Record<string, any>;
 
   @ApiProperty({ description: '二维码', required: false })
   qrCode?: string;

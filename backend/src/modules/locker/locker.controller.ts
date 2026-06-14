@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/co
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { LockerService } from './locker.service';
 import { Locker, LockerZone, LockerStatus } from '../../entities/locker.entity';
-import { UserRole } from '../../entities/user.entity';
+import { UserRole, MemberLevel } from '../../entities/user.entity';
 import { LockerLog } from '../../entities/locker-log.entity';
 import { OpenLockerDto } from './dto/open-locker.dto';
 import { CloseLockerDto } from './dto/close-locker.dto';
@@ -11,7 +11,7 @@ import { ForceClearDto } from './dto/force-clear.dto';
 import { SetFaultyDto } from './dto/set-faulty.dto';
 import { RepairLockerDto } from './dto/repair-locker.dto';
 import { LockerQueryDto } from './dto/locker-query.dto';
-import { LockerStatisticsDto, ZoneStatisticsDto } from './dto/locker-statistics.dto';
+import { LockerStatisticsDto, ZoneStatisticsDto, VipComparisonDto } from './dto/locker-statistics.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -144,5 +144,43 @@ export class LockerController {
   @ApiResponse({ status: 200, description: '超时提醒的柜子数量' })
   checkOverdueAndRemind(): Promise<number> {
     return this.lockerService.checkOverdueAndRemind();
+  }
+
+  @Get('vip-comparison')
+  @ApiOperation({ summary: '获取VIP区与普通区使用率对比统计' })
+  @ApiResponse({ status: 200, description: '对比统计信息', type: VipComparisonDto })
+  getVipComparison(): Promise<VipComparisonDto> {
+    return this.lockerService.getVipComparison();
+  }
+
+  @Post('allocate')
+  @ApiOperation({ summary: '自动分配可用储物柜' })
+  @ApiResponse({ status: 200, description: '分配的柜子信息', type: Locker })
+  allocateLocker(
+    @CurrentUser('id') userId: string,
+  ): Promise<Locker> {
+    return this.lockerService.findAvailableLocker(userId);
+  }
+
+  @Post('handle-upgrade')
+  @Roles(UserRole.ADMIN, UserRole.FRONT_DESK)
+  @ApiOperation({ summary: '处理会员升级后的柜子迁移' })
+  @ApiResponse({ status: 200, description: '迁移后的柜子信息' })
+  handleMemberUpgrade(
+    @Body() body: { userId: string; newLevel: MemberLevel },
+    @CurrentUser('id') operatorId: string,
+  ): Promise<Locker | null> {
+    return this.lockerService.handleMemberUpgrade(body.userId, body.newLevel);
+  }
+
+  @Post('handle-downgrade')
+  @Roles(UserRole.ADMIN, UserRole.FRONT_DESK)
+  @ApiOperation({ summary: '处理会员降级后的权限锁定' })
+  @ApiResponse({ status: 200, description: '处理完成' })
+  handleMemberDowngrade(
+    @Body() body: { userId: string },
+    @CurrentUser('id') operatorId: string,
+  ): Promise<void> {
+    return this.lockerService.handleMemberDowngrade(body.userId);
   }
 }

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { OrderStatus } from '../../../entities/order.entity';
+import { TicketBenefits } from '../../../entities/ticket.entity';
 
 export class OrderResponseDto {
   @ApiProperty({ description: '订单ID' })
@@ -19,6 +20,12 @@ export class OrderResponseDto {
 
   @ApiProperty({ description: '票卡名称', required: false })
   ticketName?: string;
+
+  @ApiProperty({ description: '会员权益', required: false })
+  memberBenefits?: TicketBenefits;
+
+  @ApiProperty({ description: '扩展字段', required: false })
+  extendedFields?: Record<string, any>;
 
   @ApiProperty({ description: '用户ID' })
   userId: string;

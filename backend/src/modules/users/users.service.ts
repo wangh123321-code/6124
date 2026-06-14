@@ -2,15 +2,19 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User, UserRole } from '../../entities/user.entity';
+import { User, UserRole, MemberLevel } from '../../entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { MemberService } from '../../common/services/member.service';
+import { LockerService } from '../locker/locker.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private memberService: MemberService,
+    private lockerService: LockerService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -89,6 +93,7 @@ export class UsersService {
       throw new NotFoundException('用户不存在');
     }
 
+    const oldMemberLevel = user.memberLevel;
     const updateData: Partial<User> = { ...updateUserDto };
 
     if (updateUserDto.password) {
@@ -100,6 +105,22 @@ export class UsersService {
     const updatedUser = await this.userRepository.findOne({
       where: { id },
     });
+
+    if (updateUserDto.memberLevel && updateUserDto.memberLevel !== oldMemberLevel) {
+      if (this.memberService.isHigherLevel(updateUserDto.memberLevel, oldMemberLevel)) {
+        try {
+          await this.lockerService.handleMemberUpgrade(id, updateUserDto.memberLevel);
+        } catch (error) {
+          console.error('会员升级时处理柜子迁移失败', error);
+        }
+      } else if (this.memberService.isLowerLevel(updateUserDto.memberLevel, oldMemberLevel)) {
+        try {
+          await this.lockerService.handleMemberDowngrade(id);
+        } catch (error) {
+          console.error('会员降级时处理权限锁定失败', error);
+        }
+      }
+    }
 
     return this.sanitizeUser(updatedUser!);
   }

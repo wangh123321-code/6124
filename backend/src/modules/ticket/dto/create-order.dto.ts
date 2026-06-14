@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { TicketType } from '../../../entities/ticket.entity';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsObject, IsBoolean } from 'class-validator';
+import { TicketType, TicketBenefits } from '../../../entities/ticket.entity';
+import { MemberLevel } from '../../../entities/user.entity';
 
 export class CreateOrderDto {
   @ApiProperty({ enum: TicketType, description: '票卡类型' })
@@ -29,4 +30,23 @@ export class CreateOrderDto {
   @IsString()
   @IsOptional()
   paymentMethod?: string;
+
+  @ApiProperty({ description: '是否会员专属票种', required: false, default: false })
+  @IsOptional()
+  @IsBoolean()
+  isMemberExclusive?: boolean;
+
+  @ApiProperty({ description: '会员权益配置', required: false })
+  @IsOptional()
+  @IsObject()
+  benefits?: TicketBenefits;
+
+  @ApiProperty({ enum: MemberLevel, description: '升级到的会员等级（VIP票种时使用）', required: false })
+  @IsOptional()
+  @IsEnum(MemberLevel)
+  memberLevel?: MemberLevel;
+
+  @ApiProperty({ description: '会员有效期天数', required: false })
+  @IsOptional()
+  memberDays?: number;
 }
