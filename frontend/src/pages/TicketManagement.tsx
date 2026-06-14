@@ -164,7 +164,7 @@ function TicketManagement() {
       title: '金额',
       dataIndex: 'amount',
       key: 'amount',
-      render: (val: number) => `¥${val.toFixed(2)}`,
+      render: (val: any) => `¥${Number(val).toFixed(2)}`,
     },
     {
       title: '状态',
@@ -201,7 +201,7 @@ function TicketManagement() {
       title: '价格',
       dataIndex: 'price',
       key: 'price',
-      render: (val: number) => `¥${val.toFixed(2)}`,
+      render: (val: any) => `¥${Number(val).toFixed(2)}`,
     },
     {
       title: '使用次数',
@@ -430,7 +430,7 @@ function TicketManagement() {
               <Descriptions.Item label="类型">
                 {getTicketTypeText(selectedTicket.type)}
               </Descriptions.Item>
-              <Descriptions.Item label="价格">¥{selectedTicket.price.toFixed(2)}</Descriptions.Item>
+              <Descriptions.Item label="价格">¥{Number(selectedTicket.price).toFixed(2)}</Descriptions.Item>
               <Descriptions.Item label="状态">
                 {getTicketStatusTag(selectedTicket.status)}
               </Descriptions.Item>

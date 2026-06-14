@@ -82,8 +82,18 @@ export class ApprovalService {
       .take(pageSize)
       .getManyAndCount();
 
+    const sanitizedList = list.map((approval) => {
+      if (approval.refundAmount != null) {
+        (approval as any).refundAmount = parseFloat(approval.refundAmount as any);
+      }
+      if (approval.ticket && (approval.ticket as any).price != null) {
+        (approval.ticket as any).price = parseFloat(approval.ticket.price as any);
+      }
+      return approval;
+    });
+
     return {
-      list,
+      list: sanitizedList,
       total,
       page,
       pageSize,
@@ -98,6 +108,14 @@ export class ApprovalService {
 
     if (!approval) {
       throw new NotFoundException('审批记录不存在');
+    }
+
+    if (approval.refundAmount != null) {
+      (approval as any).refundAmount = parseFloat(approval.refundAmount as any);
+    }
+
+    if (approval.ticket && (approval.ticket as any).price != null) {
+      (approval.ticket as any).price = parseFloat(approval.ticket.price as any);
     }
 
     return approval;

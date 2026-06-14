@@ -379,7 +379,7 @@ export class TicketService {
       id: ticket.id,
       type: ticket.type,
       name: ticket.name,
-      price: ticket.price,
+      price: parseFloat(ticket.price as any),
       totalTimes: ticket.totalTimes,
       usedTimes: ticket.usedTimes,
       validDays: ticket.validDays,
@@ -397,7 +397,7 @@ export class TicketService {
     return {
       id: order.id,
       orderNo: order.orderNo,
-      amount: order.amount,
+      amount: parseFloat(order.amount as any),
       status: order.status,
       ticketType: order.ticketType,
       ticketName: order.ticketName,

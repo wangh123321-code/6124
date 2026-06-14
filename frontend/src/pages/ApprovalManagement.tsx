@@ -193,7 +193,7 @@ function ApprovalManagement() {
       title: '退款金额',
       dataIndex: 'refundAmount',
       key: 'refundAmount',
-      render: (val: number) => (val ? `¥${val.toFixed(2)}` : '-'),
+      render: (val: any) => (val != null ? `¥${Number(val).toFixed(2)}` : '-'),
     },
     {
       title: '状态',
@@ -510,7 +510,7 @@ function ApprovalManagement() {
               </Descriptions.Item>
               <Descriptions.Item label="退款金额" span={2}>
                 {selectedApproval.refundAmount
-                  ? `¥${selectedApproval.refundAmount.toFixed(2)}`
+                  ? `¥${Number(selectedApproval.refundAmount).toFixed(2)}`
                   : '-'}
               </Descriptions.Item>
               <Descriptions.Item label="申请人">
